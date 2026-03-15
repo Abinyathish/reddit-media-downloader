@@ -1,7 +1,17 @@
 from flask import Flask, request, jsonify
 import yt_dlp
+from urllib.parse import urlparse, parse_qs, unquote
 
 app = Flask(__name__)
+
+def resolve_reddit_url(url):
+    # If it's a reddit media redirect, extract the actual URL
+    if 'reddit.com/media' in url:
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+        if 'url' in params:
+            return unquote(params['url'][0])
+    return url
 
 @app.route('/download', methods=['GET'])
 def download():
@@ -14,8 +24,6 @@ def download():
         'no_warnings': True,
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
         },
         'socket_timeout': 30,
     }
@@ -28,14 +36,16 @@ def download():
 
             if 'entries' in info:
                 for entry in info['entries']:
+                    direct_url = resolve_reddit_url(entry.get('url', ''))
                     media_items.append({
-                        'media_url': entry.get('url'),
+                        'media_url': direct_url,
                         'ext': entry.get('ext', 'jpg'),
                         'title': entry.get('title', 'reddit_media')
                     })
             else:
+                direct_url = resolve_reddit_url(info.get('url', ''))
                 media_items.append({
-                    'media_url': info.get('url'),
+                    'media_url': direct_url,
                     'ext': info.get('ext', 'jpg'),
                     'title': info.get('title', 'reddit_media')
                 })
