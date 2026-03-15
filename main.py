@@ -1,4 +1,4 @@
- from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 import yt_dlp
 
 app = Flask(__name__)
@@ -19,7 +19,6 @@ def download():
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
 
-        # Gallery post — multiple images/videos
         if 'entries' in info:
             for entry in info['entries']:
                 media_items.append({
@@ -27,8 +26,6 @@ def download():
                     'ext': entry.get('ext', 'jpg'),
                     'title': entry.get('title', 'reddit_media')
                 })
-
-        # Single image or video
         else:
             media_items.append({
                 'media_url': info.get('url'),
@@ -36,10 +33,7 @@ def download():
                 'title': info.get('title', 'reddit_media')
             })
 
-    return jsonify({
-        'count': len(media_items),
-        'media': media_items
-    })
+    return jsonify({'count': len(media_items), 'media': media_items})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
